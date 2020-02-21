@@ -1,6 +1,6 @@
 'use strict'
 
-const user = require('./users.js');
+const user = require('./user.js');
 const registrar = require('./registrar.js');
 
 module.exports.user = user;
