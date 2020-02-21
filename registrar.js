@@ -7,9 +7,11 @@ class Registrar extends Contract{
     // This is this smart contract's name
     super("org.property-registration-network.registrar");
   }
-  async instantiate(){
+
+  async instantiate(ctx){
     console.log("REGNET instantiated !!");
   }
+
 }
 
 module.exports = Registrar;
