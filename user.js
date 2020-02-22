@@ -10,31 +10,62 @@ class User extends Contract{
   }
 
   async requestNewUser(ctx,name,email,phoneNumber,Aadhar){
-    try{
-      const msp = await ctx.clientIdentity.getMSPID();
+  //   try{
+      const msp = ctx.clientIdentity.getMSPID();
+  //
+  //     if( msp !== 'usersMSP'){
+  //       throw new Error("ONLY MEMBERS OF USERS CAN ACCESS THIS");
+  //     }
+  //     else {
+  //
+  //     }
+  //
+  //   }
+  //   catch(err){
+  //     console.log(err);
+  //   }
+      const requestCompKey = ctx.stub.createCompositeKey("org.property-registration-network.Request",[name + '-' + Aadhar]);
+      let newRequest = {
+        name:name,
+        email_id:email,
+        phoneNumber:phoneNumber,
+        Aadhar:Aadhar,
+        createdAt: new Date(),
+      };
+      let reqBuffer = Buffer.from(JSON.stringify(newRequest));
+      await ctx.stub.putState(requestCompKey,reqBuffer);
 
-      if( msp !== 'usersMSP'){
-        throw new Error("ONLY MEMBERS OF USERS CAN ACCESS THIS");
+      return newRequest;
+  }
+
+  async rechargeAccount(ctx,name,aadhar,bankTx){
+  try {
+    const msp = ctx.clientIdentity.getMSPID();
+    console.log(msp);
+    // getting user
+
+    let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
+    let getUser = await ctx.stub.getState(userKey).catch(err => console.log(err));
+
+    if(getUser !== undefined){
+      if(bankTx.includes('upg')){
+        getUser = JSON.parse(getUser.toString())
+        let amount = bankTx.substr(3,bankTx.length); // Extracting the value
+        getUser['upgradCoins'] = getUser['upgradCoins'] + amount;
+        await ctx.stub.putState(userKey,Buffer.from(JSON.stringify(getUser)));
+        return getUser;
       }
       else {
-        const requestCompKey = ctx.stub.createCompositeKey("org.property-registration-network.Request",[name + '-' + Aadhar]);
-        let newRequest = {
-          name:name,
-          email_id:email,
-          phoneNumber:phoneNumber,
-          Aadhar:Aadhar,
-          createdAt: new Date(),
-        };
-        let reqBuffer = Buffer.from(JSON.stringify(newRequest));
-        await ctx.stub.putState(requestCompKey,reqBuffer);
-
-        return newRequest;
+        throw new Error("Not Valid Transaction");
       }
-
     }
-    catch(err){
-      console.log(err);
+    else {
+      throw new Error("Not a Valid User");
     }
+  } catch (e) {
+    console.log(e);
+  }
+    // end
   }
 
 }
