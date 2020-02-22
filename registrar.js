@@ -39,14 +39,14 @@ class Registrar extends Contract{
         };
         let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
         let getUser = await ctx.stub.getState(userKey);
-        // if (getUser == undefined){
+        if (getUser.toString() === ""){
           let userBuffer = Buffer.from(JSON.stringify(User));
           await ctx.stub.putState(userKey,userBuffer);
           return User;
-        // }
-        // else {
-        //   throw new Error("User already Verified");
-        // }
+        }
+        else {
+          throw new Error("User already Verified");
+        }
       }
     } catch (e) {
       console.log(e);
@@ -59,6 +59,9 @@ class Registrar extends Contract{
     try {
       let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
       let getUser = await ctx.stub.getState(userKey)
+      if(getUser.toString() === ""){
+        throw new Error("The User doesn't EXIST!!!");
+      }
       getUser = JSON.parse(getUser.toString())
       return getUser;
     } catch (e) {

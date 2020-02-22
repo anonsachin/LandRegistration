@@ -46,6 +46,9 @@ class User extends Contract{
 
     let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
     let getUser = await ctx.stub.getState(userKey);
+    if(getUser.toString() === ""){
+      throw new Error("The User doesn't EXIST!!!");
+    }
 
     if(getUser !== undefined){
       if(bankTx.includes('upg')){
@@ -73,10 +76,26 @@ class User extends Contract{
     try {
       let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
       let getUser = await ctx.stub.getState(userKey)
+      if(getUser.toString() === ""){
+        throw new Error("The User doesn't EXIST!!!");
+      }
       getUser = JSON.parse(getUser.toString())
       return getUser;
     } catch (e) {
       console.log(e);
+    }
+  }
+
+  async propertyRegistrationRequest(ctx,propertyID,price,name,aadhar){
+    try {
+      let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
+      let getUser = await ctx.stub.getState(userKey)
+      if(getUser.toString() === ""){
+        throw new Error("The User doesn't EXIST!!!");
+      }
+      getUser = JSON.parse(getUser.toString())
+    } catch (e) {
+      console.log(e)
     }
   }
 
