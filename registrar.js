@@ -38,7 +38,7 @@ class Registrar extends Contract{
           upgradCoins:0,
         };
         let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
-        let getUser = await ctx.stub.getState(userKey).catch(err => console.log(err));
+        let getUser = await ctx.stub.getState(userKey);
         // if (getUser == undefined){
           let userBuffer = Buffer.from(JSON.stringify(User));
           await ctx.stub.putState(userKey,userBuffer);
@@ -52,6 +52,18 @@ class Registrar extends Contract{
       console.log(e);
     }
     // end
+  }
+
+  // get user details
+  async viewUser(ctx,name,aadhar){
+    try {
+      let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
+      let getUser = await ctx.stub.getState(userKey)
+      getUser = JSON.parse(getUser.toString())
+      return getUser;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
 
