@@ -10,7 +10,7 @@ class User extends Contract{
   }
 
   async requestNewUser(ctx,name,email,phoneNumber,Aadhar){
-  //   try{
+    try{
       const msp = ctx.clientIdentity.getMSPID();
   //
   //     if( msp !== 'usersMSP'){
@@ -20,10 +20,6 @@ class User extends Contract{
   //
   //     }
   //
-  //   }
-  //   catch(err){
-  //     console.log(err);
-  //   }
       const requestCompKey = ctx.stub.createCompositeKey("org.property-registration-network.Request",[name + '-' + Aadhar]);
       let newRequest = {
         name:name,
@@ -36,6 +32,11 @@ class User extends Contract{
       await ctx.stub.putState(requestCompKey,reqBuffer);
 
       return newRequest;
+    }
+    catch(err){
+      console.log(err);
+    }
+    // end
   }
 
   async rechargeAccount(ctx,name,aadhar,bankTx){
@@ -86,6 +87,7 @@ class User extends Contract{
     }
   }
 
+  // property Request
   async propertyRegistrationRequest(ctx,propertyID,price,name,aadhar){
     try {
       let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
@@ -93,10 +95,62 @@ class User extends Contract{
       if(getUser.toString() === ""){
         throw new Error("The User doesn't EXIST!!!");
       }
-      getUser = JSON.parse(getUser.toString())
+      getUser = JSON.parse(getUser.toString());
+      let propertyRequest = { //request
+        propertyID:propertyID,
+        Owner:userKey,
+        Price:price,
+        Status:null,
+      }
+      let propKey = ctx.stub.createCompositeKey("org.property-registration-network.Request",[propertyID]);
+      await ctx.stub.putState(propKey,Buffer.from(JSON.stringify(propertyRequest)));
+      return propertyRequest;
     } catch (e) {
       console.log(e)
     }
+    //end
+  }
+
+  // get property
+  async viewProperty(ctx,propertyID){
+    try {
+      let propKey = ctx.stub.createCompositeKey("org.property-registration-network.Property",[propertyID]);
+      let request = await  ctx.stub.getState(propKey);
+      if(request.toString() === ""){
+        throw new Error("The Property Doesn't EXIST!!");
+      }
+      return JSON.parse(request.toString());
+    } catch (e) {
+      console.log(e);
+    }
+    //end
+  }
+
+  // update status
+  async updateProperty(ctx,propertyID,name,aadhar,status){
+    try {
+      let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
+      let propKey = ctx.stub.createCompositeKey("org.property-registration-network.Property",[propertyID]);
+      let request = await ctx.stub.getState(propKey);
+      if(request.toString() === ""){
+        throw new Error("The Property Doesn't EXIST!!");
+      }
+      request = JSON.parse(request.toString());
+      // console.log(userKey.toString());
+      // console.log(request);
+      if(userKey.toString() !== request['Owner'] ){
+        throw new Error("Not The Owner of This property");
+      }
+      if(status !== "onSale"){
+        throw new Error("Illegal status");
+      }
+      request['Status'] = status;
+      await ctx.stub.putState(propKey,request);
+      return request;
+    } catch (e) {
+      console.log(e);
+    }
+    //end
   }
 
 }

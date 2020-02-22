@@ -67,8 +67,46 @@ class Registrar extends Contract{
     } catch (e) {
       console.log(e);
     }
+    // end
   }
 
+  // get property
+  async viewProperty(ctx,propertyID){
+    try {
+      let propKey = ctx.stub.createCompositeKey("org.property-registration-network.Property",[propertyID]);
+      let request = await  ctx.stub.getState(propKey);
+      if(request.toString() === ""){
+        throw new Error("The Property Doesn't EXIST!!");
+      }
+      return JSON.parse(request.toString());
+    } catch (e) {
+      console.log(e);
+    }
+    //end
+  }
+
+  // approve property request
+  async approvePropertyRegistration(ctx,propertyID){
+    try{
+      let reqKey = ctx.stub.createCompositeKey("org.property-registration-network.Request",[propertyID]);
+      let request = await  ctx.stub.getState(reqKey);
+      if(request.toString() === ""){
+        throw new Error("The Request Doesn't EXIST!!");
+      }
+      request = JSON.parse(request.toString());
+      let property = {
+        propertyID:request['propertyID'],
+        Owner:request['Owner'],
+        Price:request['Price'],
+        Status:"registered",
+      }
+      let propKey = ctx.stub.createCompositeKey("org.property-registration-network.Property",[propertyID]);
+      await ctx.stub.putState(propKey,Buffer.from(JSON.stringify(property)));
+      return property;
+    }catch(e){
+      console.log(e);
+    }
+  }
 
 }
 
