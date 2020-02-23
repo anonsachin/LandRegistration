@@ -55,6 +55,7 @@ class User extends Contract{
       if(bankTx.includes('upg')){
         getUser = JSON.parse(getUser.toString())
         let amount = bankTx.substr(3,bankTx.length); // Extracting the value
+        getUser['upgradCoins'] = Number(getUser['upgradCoins']);
         getUser['upgradCoins'] = getUser['upgradCoins'] + amount;
         await ctx.stub.putState(userKey,Buffer.from(JSON.stringify(getUser)));
         return getUser;
@@ -77,6 +78,7 @@ class User extends Contract{
     try {
       let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
       let getUser = await ctx.stub.getState(userKey)
+      console.log(userKey);
       if(getUser.toString() === ""){
         throw new Error("The User doesn't EXIST!!!");
       }
@@ -136,8 +138,7 @@ class User extends Contract{
         throw new Error("The Property Doesn't EXIST!!");
       }
       request = JSON.parse(request.toString());
-      // console.log(userKey.toString());
-      // console.log(request);
+
       if(userKey.toString() !== request['Owner'] ){
         throw new Error("Not The Owner of This property");
       }
@@ -145,8 +146,80 @@ class User extends Contract{
         throw new Error("Illegal status");
       }
       request['Status'] = status;
-      await ctx.stub.putState(propKey,request);
+      await ctx.stub.putState(propKey,Buffer.from(JSON.stringify(request)));
       return request;
+    } catch (e) {
+      console.log(e);
+    }
+    //end
+  }
+
+  // purchase of on sale Property
+  async purchaseProperty(ctx,propertyID,name,aadhar){
+    try {
+      let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
+      let propKey = ctx.stub.createCompositeKey("org.property-registration-network.Property",[propertyID]);
+      let request = await ctx.stub.getState(propKey);
+      if(request.toString() === ""){
+        throw new Error("The Property Doesn't EXIST!!");
+      }
+      request = JSON.parse(request.toString());
+      if(request['Status'] !== "onSale"){
+        throw new Error("Not for Sale!!");
+      }
+      // buyer
+      let buyer = await ctx.stub.getState(userKey);
+      if(buyer.toString() === ""){
+        throw new Error("Buyer is Not a registered user!!")
+      }
+      buyer = JSON.parse(buyer.toString());
+      // conversion to numbers from srtings
+      buyer['upgradCoins'] = Number(buyer['upgradCoins']);
+      request['Price'] = Number(request['Price']);
+
+      if(buyer['upgradCoins'] < request['Price']){
+        throw new Error("Balance is to low to make this transaction");
+      }
+      // Owner
+      console.log('org.property-registration-network.User');
+      console.log(request['Owner']);
+      console.log(request['Owner'].substr('org.property-registration-network.Users'.length+1,request['Owner'].length));
+      let nameDet = request['Owner'].substr('org.property-registration-network.Users'.length+1,request['Owner'].length);
+      console.log(nameDet);
+      let ownerKey = ctx.stub.createCompositeKey('org.property-registration-network.Users',[nameDet]);
+      console.log(nameDet.split('-'));
+      let entity = nameDet.split('-');
+      let ownerSplit = ctx.stub.createCompositeKey('org.property-registration-network.Users',[String(entity[0])+'-'+String(entity[1])]);
+      console.log(ownerKey);
+      let alice = ctx.stub.createCompositeKey('org.property-registration-network.Users',['alice'+'-'+'0001']);
+      let getAlice = await ctx.stub.getState(alice);
+      console.log("alice");
+      console.log(getAlice.toString());
+      let owner = await ctx.stub.getState(ownerKey);
+      console.log("check");
+      console.log(ownerKey === alice);
+      console.log("keys");
+      console.log(alice);
+      console.log(ownerKey);
+      console.log("split check");
+      console.log(ownerSplit == alice);
+      console.log(ownerSplit === ownerKey);
+      console.log(ownerSplit);
+      let getSplit = await ctx.stub.getState(ownerSplit);
+      console.log(getSplit);
+      console.log(owner);
+      owner = JSON.parse(owner.toString());
+
+      // transaction
+      owner['upgradCoins'] = owner['upgradCoins'] + request['Price'];
+      buyer['upgradCoins'] = buyer['upgradCoins'] - request['Price'];
+      request['Owner'] = userKey;
+      await ctx.stub.putState(userKey,Buffer.from(JSON.stringify(buyer)));
+      await ctx.stub.putState(ownerKey,Buffer.from(JSON.stringify(owner)));
+      await ctx.stub.putState(propKey,Buffer.from(JSON.stringify(request)));
+
+      return request;
+
     } catch (e) {
       console.log(e);
     }

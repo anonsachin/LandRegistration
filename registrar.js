@@ -16,7 +16,7 @@ class Registrar extends Contract{
     try {
       // msp
       const msp = ctx.clientIdentity.getMSPID();
-      console.log(msp);
+      
       // Getting Request
       let compKey  = ctx.stub.createCompositeKey("org.property-registration-network.Request",[name + '-' + aadhar]);
 
