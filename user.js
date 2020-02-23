@@ -100,7 +100,7 @@ class User extends Contract{
       getUser = JSON.parse(getUser.toString());
       let propertyRequest = { //request
         propertyID:propertyID,
-        Owner:userKey,
+        Owner:userKey.toString(),
         Price:price,
         Status:null,
       }
@@ -181,41 +181,59 @@ class User extends Contract{
         throw new Error("Balance is to low to make this transaction");
       }
       // Owner
-      console.log('org.property-registration-network.User');
-      console.log(request['Owner']);
-      console.log(request['Owner'].substr('org.property-registration-network.Users'.length+1,request['Owner'].length));
+
       let nameDet = request['Owner'].substr('org.property-registration-network.Users'.length+1,request['Owner'].length);
-      console.log(nameDet);
-      let ownerKey = ctx.stub.createCompositeKey('org.property-registration-network.Users',[nameDet]);
-      console.log(nameDet.split('-'));
+      // console.log(nameDet);
+      // let ownerKey = ctx.stub.createCompositeKey('org.property-registration-network.Users',[nameDet]);
+      // console.log(nameDet.split('-'));
       let entity = nameDet.split('-');
-      let ownerSplit = ctx.stub.createCompositeKey('org.property-registration-network.Users',[String(entity[0])+'-'+String(entity[1])]);
-      console.log(ownerKey);
-      let alice = ctx.stub.createCompositeKey('org.property-registration-network.Users',['alice'+'-'+'0001']);
-      let getAlice = await ctx.stub.getState(alice);
-      console.log("alice");
-      console.log(getAlice.toString());
-      let owner = await ctx.stub.getState(ownerKey);
-      console.log("check");
-      console.log(ownerKey === alice);
-      console.log("keys");
-      console.log(alice);
-      console.log(ownerKey);
-      console.log("split check");
-      console.log(ownerSplit == alice);
-      console.log(ownerSplit === ownerKey);
-      console.log(ownerSplit);
+      let ownerSplit = ctx.stub.createCompositeKey('org.property-registration-network.Users',[entity[0].replace(/\0/g, '')+'-'+entity[1].replace(/\0/g, '')]);
+      // .replace(/\0/g, '') removes the null characters
+      // console.log(ownerKey);
+      // let alice = ctx.stub.createCompositeKey('org.property-registration-network.Users',['alice'+'-'+'0001']);
+      // let getAlice = await ctx.stub.getState(alice);
+      // console.log("entity");
+      // console.log("entity 1"+ entity[0].length);
+      // console.log("entity 2"+ entity[1].length);
+      // console.log("edit");
+      // console.log("entity 1"+ entity[0].replace(/\0/g, '').length);
+      // console.log(entity[0]+"before"+entity[0].replace(/\0/g, ''));
+      // console.log("entity 2"+ entity[1].replace(/\0/g, '').length);
+      // console.log(entity[1]+"before"+entity[1].replace(/\0/g, ''));
+      // console.log("trim");
+      // console.log("entity 1"+ entity[0].trim().length);
+      // console.log("entity 2"+ entity[1].trim().length);
+      // console.log("alice");
+      // console.log(typeof(alice));
+      // console.log("split and alice work");
+      // console.log(typeof(ownerSplit));
+      // console.log(alice === ownerSplit);
+      // console.log(alice == ownerSplit);
+      // console.log("diff check");
+      // console.log(findDiff(alice,ownerSplit));
+      // console.log(getAlice.toString());
+      // let owner = await ctx.stub.getState(ownerKey);
+      // console.log("check");
+      // console.log(ownerKey === alice);
+      // console.log("keys");
+      // console.log(alice);
+      // console.log(ownerKey);
+      // console.log("split check");
+      // console.log(ownerSplit == alice);
+      // console.log(ownerSplit === ownerKey);
+      // console.log(ownerSplit);
       let getSplit = await ctx.stub.getState(ownerSplit);
-      console.log(getSplit);
-      console.log(owner);
-      owner = JSON.parse(owner.toString());
+      // console.log(getSplit);
+      // console.log(owner);
+      let owner = JSON.parse(getSplit.toString());
 
       // transaction
-      owner['upgradCoins'] = owner['upgradCoins'] + request['Price'];
-      buyer['upgradCoins'] = buyer['upgradCoins'] - request['Price'];
+      owner['upgradCoins'] = Number(owner['upgradCoins']) + Number(request['Price']);
+      buyer['upgradCoins'] = Number(buyer['upgradCoins']) - Number(request['Price']);
       request['Owner'] = userKey;
+      request['Status'] = "registered";
       await ctx.stub.putState(userKey,Buffer.from(JSON.stringify(buyer)));
-      await ctx.stub.putState(ownerKey,Buffer.from(JSON.stringify(owner)));
+      await ctx.stub.putState(ownerSplit,Buffer.from(JSON.stringify(owner)));
       await ctx.stub.putState(propKey,Buffer.from(JSON.stringify(request)));
 
       return request;
@@ -226,6 +244,14 @@ class User extends Contract{
     //end
   }
 
+}
+let findDiff = (str1, str2) =>{
+  let diff= "";
+  str2.split('').forEach(function(val, i){
+    if (val != str1.charAt(i))
+      diff += val ;
+  });
+  return diff;
 }
 
 module.exports = User;
