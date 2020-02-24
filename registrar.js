@@ -14,21 +14,24 @@ class Registrar extends Contract{
 
   async approveNewUser(ctx,name,aadhar){
     try {
-      // msp
+      // msp ACCESS control
       const msp = ctx.clientIdentity.getMSPID();
-      
+
+      if( msp !== 'registrarMSP'){
+        throw new Error("ONLY MEMBERS OF REGISTRAR CAN ACCESS THIS");
+      }
+
       // Getting Request
       let compKey  = ctx.stub.createCompositeKey("org.property-registration-network.Request",[name + '-' + aadhar]);
 
-      let request = await ctx.stub.getState(compKey).catch(err => console.log(err));
+      let request = await ctx.stub.getState(compKey);
 
-      request = JSON.parse(request.toString());
-
-      if(request === undefined){
+      if(request.toString() === ""){
         throw new Error("Request Not present");
       }
       else{
         // user
+        request = JSON.parse(request.toString());
         let User = {
           name:request['name'],
           email_id:request['email_id'],
@@ -88,6 +91,13 @@ class Registrar extends Contract{
   // approve property request
   async approvePropertyRegistration(ctx,propertyID){
     try{
+      // msp ACCESS control
+      const msp = ctx.clientIdentity.getMSPID();
+
+      if( msp !== 'registrarMSP'){
+        throw new Error("ONLY MEMBERS OF REGISTRAR CAN ACCESS THIS");
+      }
+
       let reqKey = ctx.stub.createCompositeKey("org.property-registration-network.Request",[propertyID]);
       let request = await  ctx.stub.getState(reqKey);
       if(request.toString() === ""){
@@ -106,6 +116,7 @@ class Registrar extends Contract{
     }catch(e){
       console.log(e);
     }
+    //end
   }
 
 }

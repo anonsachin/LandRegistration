@@ -11,15 +11,13 @@ class User extends Contract{
 
   async requestNewUser(ctx,name,email,phoneNumber,Aadhar){
     try{
+      //msp ACCESS control
       const msp = ctx.clientIdentity.getMSPID();
-  //
-  //     if( msp !== 'usersMSP'){
-  //       throw new Error("ONLY MEMBERS OF USERS CAN ACCESS THIS");
-  //     }
-  //     else {
-  //
-  //     }
-  //
+
+      if( msp !== 'usersMSP'){
+        throw new Error("ONLY MEMBERS OF USERS CAN ACCESS THIS");
+      }
+
       const requestCompKey = ctx.stub.createCompositeKey("org.property-registration-network.Request",[name + '-' + Aadhar]);
       let newRequest = {
         name:name,
@@ -41,8 +39,12 @@ class User extends Contract{
 
   async rechargeAccount(ctx,name,aadhar,bankTx){
   try {
+    // msp ACCESS control
     const msp = ctx.clientIdentity.getMSPID();
-    console.log(msp);
+
+    if( msp !== 'usersMSP'){
+      throw new Error("ONLY MEMBERS OF USERS CAN ACCESS THIS");
+    }
     // getting user
 
     let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
@@ -56,7 +58,7 @@ class User extends Contract{
         getUser = JSON.parse(getUser.toString())
         let amount = bankTx.substr(3,bankTx.length); // Extracting the value
         getUser['upgradCoins'] = Number(getUser['upgradCoins']);
-        getUser['upgradCoins'] = getUser['upgradCoins'] + amount;
+        getUser['upgradCoins'] = getUser['upgradCoins'] + Number(amount);
         await ctx.stub.putState(userKey,Buffer.from(JSON.stringify(getUser)));
         return getUser;
       }
@@ -92,6 +94,13 @@ class User extends Contract{
   // property Request
   async propertyRegistrationRequest(ctx,propertyID,price,name,aadhar){
     try {
+      // msp ACCESS control
+      const msp = ctx.clientIdentity.getMSPID();
+
+      if( msp !== 'usersMSP'){
+        throw new Error("ONLY MEMBERS OF USERS CAN ACCESS THIS");
+      }
+
       let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
       let getUser = await ctx.stub.getState(userKey)
       if(getUser.toString() === ""){
@@ -131,6 +140,13 @@ class User extends Contract{
   // update status
   async updateProperty(ctx,propertyID,name,aadhar,status){
     try {
+      // msp ACCESS control
+      const msp = ctx.clientIdentity.getMSPID();
+
+      if( msp !== 'usersMSP'){
+        throw new Error("ONLY MEMBERS OF USERS CAN ACCESS THIS");
+      }
+
       let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
       let propKey = ctx.stub.createCompositeKey("org.property-registration-network.Property",[propertyID]);
       let request = await ctx.stub.getState(propKey);
@@ -157,6 +173,14 @@ class User extends Contract{
   // purchase of on sale Property
   async purchaseProperty(ctx,propertyID,name,aadhar){
     try {
+
+      // msp ACCESS control
+      const msp = ctx.clientIdentity.getMSPID();
+
+      if( msp !== 'usersMSP'){
+        throw new Error("ONLY MEMBERS OF USERS CAN ACCESS THIS");
+      }
+
       let userKey = ctx.stub.createCompositeKey("org.property-registration-network.Users",[name + '-' + aadhar]);
       let propKey = ctx.stub.createCompositeKey("org.property-registration-network.Property",[propertyID]);
       let request = await ctx.stub.getState(propKey);
@@ -183,48 +207,13 @@ class User extends Contract{
       // Owner
 
       let nameDet = request['Owner'].substr('org.property-registration-network.Users'.length+1,request['Owner'].length);
-      // console.log(nameDet);
-      // let ownerKey = ctx.stub.createCompositeKey('org.property-registration-network.Users',[nameDet]);
-      // console.log(nameDet.split('-'));
       let entity = nameDet.split('-');
       let ownerSplit = ctx.stub.createCompositeKey('org.property-registration-network.Users',[entity[0].replace(/\0/g, '')+'-'+entity[1].replace(/\0/g, '')]);
+      // most important removing the null characters.
       // .replace(/\0/g, '') removes the null characters
-      // console.log(ownerKey);
-      // let alice = ctx.stub.createCompositeKey('org.property-registration-network.Users',['alice'+'-'+'0001']);
-      // let getAlice = await ctx.stub.getState(alice);
-      // console.log("entity");
-      // console.log("entity 1"+ entity[0].length);
-      // console.log("entity 2"+ entity[1].length);
-      // console.log("edit");
-      // console.log("entity 1"+ entity[0].replace(/\0/g, '').length);
-      // console.log(entity[0]+"before"+entity[0].replace(/\0/g, ''));
-      // console.log("entity 2"+ entity[1].replace(/\0/g, '').length);
-      // console.log(entity[1]+"before"+entity[1].replace(/\0/g, ''));
-      // console.log("trim");
-      // console.log("entity 1"+ entity[0].trim().length);
-      // console.log("entity 2"+ entity[1].trim().length);
-      // console.log("alice");
-      // console.log(typeof(alice));
-      // console.log("split and alice work");
-      // console.log(typeof(ownerSplit));
-      // console.log(alice === ownerSplit);
-      // console.log(alice == ownerSplit);
-      // console.log("diff check");
-      // console.log(findDiff(alice,ownerSplit));
-      // console.log(getAlice.toString());
-      // let owner = await ctx.stub.getState(ownerKey);
-      // console.log("check");
-      // console.log(ownerKey === alice);
-      // console.log("keys");
-      // console.log(alice);
-      // console.log(ownerKey);
-      // console.log("split check");
-      // console.log(ownerSplit == alice);
-      // console.log(ownerSplit === ownerKey);
-      // console.log(ownerSplit);
+
       let getSplit = await ctx.stub.getState(ownerSplit);
-      // console.log(getSplit);
-      // console.log(owner);
+
       let owner = JSON.parse(getSplit.toString());
 
       // transaction
@@ -245,13 +234,6 @@ class User extends Contract{
   }
 
 }
-let findDiff = (str1, str2) =>{
-  let diff= "";
-  str2.split('').forEach(function(val, i){
-    if (val != str1.charAt(i))
-      diff += val ;
-  });
-  return diff;
-}
+
 
 module.exports = User;
